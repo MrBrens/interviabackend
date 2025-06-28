@@ -13,6 +13,13 @@ const nextConfig = {
       },
     ],
   },
+  trailingSlash: false,
+  async redirects() {
+    return [];
+  },
+  async rewrites() {
+    return [];
+  }
 }
 
 module.exports = nextConfig

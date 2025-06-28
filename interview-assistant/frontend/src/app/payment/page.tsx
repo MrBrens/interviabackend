@@ -49,11 +49,7 @@ export default function PaymentPage() {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans`, {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`
-        }
-      })
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans/public`)
       
       if (response.ok) {
         const data = await response.json()

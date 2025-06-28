@@ -34,7 +34,7 @@ const sequelize = new Sequelize(
   }
 );
 
-// Test the connection
+// Test the connection without exiting the process
 sequelize.authenticate()
   .then(() => {
     console.log('✅ Remote MySQL connected successfully');
@@ -45,7 +45,8 @@ sequelize.authenticate()
     console.log('💡 Check if the remote server is accessible');
     console.log('🔧 You can access phpMyAdmin at: https://158.69.248.25:887/phpmyadmin_a3cf3f94842be96d/');
     console.log('🌐 Try pinging the server: ping 158.69.248.25');
-    process.exit(1); // Exit if we can't connect to the database
+    console.log('⚠️ Application will continue but database features may not work');
+    // Don't exit the process - let the application start and handle database issues gracefully
   });
 
 module.exports = sequelize;

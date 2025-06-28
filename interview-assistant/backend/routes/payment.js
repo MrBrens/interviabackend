@@ -5,9 +5,13 @@ const router = express.Router();
 console.log('Stripe Secret Key loaded:', process.env.STRIPE_SECRET_KEY ? 
   process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'NOT FOUND');
 
-// Use test key as fallback for development
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_51ROLKLP8p87d3gFbRrDxnymVSu5SABzUFoXmeDMJ44wnebLXvrdb7a4Uumu1G9zhdos7lqWz2vv48PByMAIxGWog00rmZV6OmU';
-const stripe = require('stripe')(stripeSecretKey);
+// Initialize Stripe only if secret key is available
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+} else {
+  console.warn('STRIPE_SECRET_KEY not set - payment features will be disabled');
+}
 
 const { authMiddleware } = require('../middleware/authMiddleware');
 const Plan = require('../models/Plan');
@@ -15,6 +19,12 @@ const Subscription = require('../models/Subscription');
 
 // Create Stripe Checkout session
 router.post('/create-checkout-session', authMiddleware, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   try {
     const { planId } = req.body;
     console.log('Creating checkout session for planId:', planId);
@@ -71,8 +81,19 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
 
 // Handle successful payment webhook
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_webhook_secret';
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  if (!endpointSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+    return res.status(500).json({ message: 'Webhook secret not configured' });
+  }
 
   let event;
 
@@ -126,6 +147,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 // Get session details
 router.get('/session/:sessionId', authMiddleware, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   try {
     const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);
     res.json({ session });

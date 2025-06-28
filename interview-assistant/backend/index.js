@@ -44,6 +44,8 @@ const corsOptions = {
     
     const allowedOrigins = [
       'http://localhost:3000', // Frontend development server
+      'http://localhost:3001', // Frontend development server (alternative port)
+      'https://interviafrontend.vercel.app', // Production frontend
       'https://fa10-165-51-104-50.ngrok-free.app',
       'https://hong-edmonton-tolerance-negotiations.trycloudflare.com',
       'https://speaker-weekends-pete-retrieve.trycloudflare.com',
@@ -59,6 +61,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('🚫 CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },

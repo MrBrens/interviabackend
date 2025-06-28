@@ -5,13 +5,13 @@ const router = express.Router();
 console.log('Stripe Secret Key loaded:', process.env.STRIPE_SECRET_KEY ? 
   process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'NOT FOUND');
 
-// Use environment variable for Stripe secret key
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) {
-  console.error('STRIPE_SECRET_KEY environment variable is not set');
-  throw new Error('STRIPE_SECRET_KEY environment variable is required');
+// Initialize Stripe only if secret key is available
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+} else {
+  console.warn('STRIPE_SECRET_KEY not set - payment features will be disabled');
 }
-const stripe = require('stripe')(stripeSecretKey);
 
 const { authMiddleware } = require('../middleware/authMiddleware');
 const Plan = require('../models/Plan');
@@ -19,6 +19,12 @@ const Subscription = require('../models/Subscription');
 
 // Create Stripe Checkout session
 router.post('/create-checkout-session', authMiddleware, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   try {
     const { planId } = req.body;
     console.log('Creating checkout session for planId:', planId);
@@ -75,6 +81,12 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
 
 // Handle successful payment webhook
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
@@ -135,6 +147,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 // Get session details
 router.get('/session/:sessionId', authMiddleware, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: 'Payment service is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+    });
+  }
+
   try {
     const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);
     res.json({ session });

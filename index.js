@@ -84,57 +84,68 @@ app.get('/', (req, res) => {
 const startServer = async () => {
   try {
     // Test database connection
-    await sequelize.authenticate()
-    console.log('✅ Database connection established successfully')
-
-    // Sync database schema
-    console.log('🔄 Syncing database schema...')
-    await sequelize.sync({ force: false })
-    console.log('✅ Database schema synchronized')
-
-    // Check if CV columns exist using MySQL-compatible approach
     try {
-      const [results] = await sequelize.query(`
-        DESCRIBE Discussions
-      `)
-      
-      const existingColumns = results.map(row => row.Field)
-      const requiredColumns = ['cv_skills', 'cv_experience', 'cv_education', 'cv_summary']
-      const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col))
-      
-      console.log('📊 Existing columns in Discussions table:', existingColumns)
-      console.log('📊 Missing CV columns:', missingColumns)
+      await sequelize.authenticate()
+      console.log('✅ Database connection established successfully')
 
-      // If any CV columns are missing, add them
-      if (missingColumns.length > 0) {
-        console.log('⚠️ Some CV columns are missing, adding them...')
-        for (const column of missingColumns) {
-          await sequelize.query(`
-            ALTER TABLE Discussions ADD COLUMN ${column} TEXT DEFAULT '[]'
-          `)
+      // Sync database schema
+      console.log('🔄 Syncing database schema...')
+      await sequelize.sync({ force: false })
+      console.log('✅ Database schema synchronized')
+
+      // Check if CV columns exist using MySQL-compatible approach
+      try {
+        const [results] = await sequelize.query(`
+          DESCRIBE Discussions
+        `)
+        
+        const existingColumns = results.map(row => row.Field)
+        const requiredColumns = ['cv_skills', 'cv_experience', 'cv_education', 'cv_summary']
+        const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col))
+        
+        console.log('📊 Existing columns in Discussions table:', existingColumns)
+        console.log('📊 Missing CV columns:', missingColumns)
+
+        // If any CV columns are missing, add them
+        if (missingColumns.length > 0) {
+          console.log('⚠️ Some CV columns are missing, adding them...')
+          for (const column of missingColumns) {
+            await sequelize.query(`
+              ALTER TABLE Discussions ADD COLUMN ${column} TEXT DEFAULT '[]'
+            `)
+          }
+          console.log('✅ CV columns added successfully')
         }
-        console.log('✅ CV columns added successfully')
+      } catch (error) {
+        console.log('⚠️ Could not check CV columns, continuing...', error.message)
       }
-    } catch (error) {
-      console.log('⚠️ Could not check CV columns, continuing...', error.message)
+
+      // Create test user if it doesn't exist
+      try {
+        const testUser = await User.findOne({ where: { email: 'test@example.com' } })
+        if (!testUser) {
+          await User.create({
+            email: 'test@example.com',
+            password: await bcrypt.hash('password123', 10),
+            firstName: 'Test',
+            lastName: 'User'
+          })
+          console.log('✅ Test user created')
+        }
+      } catch (error) {
+        console.log('⚠️ Could not create test user, continuing...', error.message)
+      }
+    } catch (dbError) {
+      console.error('❌ Database connection failed:', dbError.message)
+      console.log('⚠️ Server will start without database functionality')
+      console.log('💡 Set up database environment variables for full functionality')
     }
 
-    // Create test user if it doesn't exist
-    const testUser = await User.findOne({ where: { email: 'test@example.com' } })
-    if (!testUser) {
-      await User.create({
-        email: 'test@example.com',
-        password: await bcrypt.hash('password123', 10),
-        firstName: 'Test',
-        lastName: 'User'
-      })
-      console.log('✅ Test user created')
-    }
-
-    // Start server
+    // Start server regardless of database status
     const PORT = process.env.PORT || 5050
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`)
+      console.log(`🌐 API available at: http://localhost:${PORT}`)
     })
   } catch (error) {
     console.error('❌ Error starting server:', error)

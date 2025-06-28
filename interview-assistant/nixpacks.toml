@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "mysql"]
+
+[phases.install]
+cmds = ["cd interview-assistant/backend && npm install"]
+
+[phases.build]
+cmds = ["cd interview-assistant/backend && npm run build"]
+
+[start]
+cmd = "cd interview-assistant/backend && npm start" 

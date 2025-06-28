@@ -46,6 +46,8 @@ const corsOptions = {
       'http://localhost:3000', // Frontend development server
       'http://localhost:3001', // Frontend development server (alternative port)
       'https://interviafrontend.vercel.app', // Production frontend
+      'https://interviafrontend.vercel.app/', // Production frontend with trailing slash
+      'https://zooming-enjoyment.vercel.app', // Alternative production frontend
       'https://fa10-165-51-104-50.ngrok-free.app',
       'https://hong-edmonton-tolerance-negotiations.trycloudflare.com',
       'https://speaker-weekends-pete-retrieve.trycloudflare.com',
@@ -57,6 +59,9 @@ const corsOptions = {
       const envOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
       allowedOrigins.push(...envOrigins);
     }
+    
+    console.log('🌐 Request origin:', origin);
+    console.log('✅ Allowed origins:', allowedOrigins);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -146,9 +151,12 @@ const startServer = async () => {
 
     // Start server regardless of database status
     const PORT = process.env.PORT || 5050
-    app.listen(PORT, () => {
+    console.log(`🔧 Environment PORT: ${process.env.PORT}`)
+    console.log(`🔧 Using PORT: ${PORT}`)
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`)
       console.log(`🌐 API available at: http://localhost:${PORT}`)
+      console.log(`🌐 Railway URL: https://interviabackend-production.up.railway.app`)
     })
   } catch (error) {
     console.error('❌ Error starting server:', error)

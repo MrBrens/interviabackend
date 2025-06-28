@@ -1,0 +1,18 @@
+{
+  "name": "interview-assistant",
+  "version": "1.0.0",
+  "description": "Interview Assistant - Full Stack Application",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "echo 'Use npm run dev in frontend or backend directory'",
+    "build": "echo 'Building full application'",
+    "start": "cd backend && npm start"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

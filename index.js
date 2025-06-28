@@ -30,10 +30,10 @@ try {
 
 const app = express()
 
-// ✅ Sécurité : assure que JWT_SECRET est défini
+// ✅ Sécurité : assure que JWT_SECRET est défini ou utilise une valeur par défaut
 if (!process.env.JWT_SECRET) {
-  console.error('❌ JWT_SECRET non défini dans .env')
-  process.exit(1)
+  console.warn('⚠️ JWT_SECRET non défini dans .env - using default secret (not secure for production)')
+  process.env.JWT_SECRET = 'default-jwt-secret-change-in-production'
 }
 
 // ✅ CORS : autorise les requêtes du frontend
@@ -216,6 +216,12 @@ app.post('/api/login', async (req, res) => {
     if (!isValidPassword) {
       console.log('❌ Invalid password for user:', email);
       return res.status(401).json({ message: 'Email ou mot de passe invalide' });
+    }
+
+    // Ensure JWT_SECRET is available
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ JWT_SECRET is not available for token generation');
+      return res.status(500).json({ message: 'Authentication service is not properly configured' });
     }
 
     const token = jwt.sign(
